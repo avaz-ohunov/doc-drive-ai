@@ -1,0 +1,463 @@
+openapi: 3.1.0
+info:
+  title: DockDriveAI API
+  description: API for secure file storage with AI-powered analysis and tagging.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    File:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full name/path of the file in storage
+        path:
+          type: string
+          description: Full path including folders
+        size:
+          type: integer
+          format: int64
+        human_size:
+          type: string
+          example: "1.2 MB"
+        is_dir:
+          type: boolean
+        last_modified:
+          type: string
+          format: date-time
+        content_type:
+          type: string
+        etag:
+          type: string
+        summary:
+          type: string
+        analysis_tags:
+          type: array
+          items:
+            type: string
+        analysis_status:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+    RenameRequest:
+      type: object
+      required: [old_path, new_path]
+      properties:
+        old_path: {type: string}
+        new_path: {type: string}
+        is_folder: {type: boolean}
+
+    MoveRequest:
+      type: object
+      required: [old_path, new_path]
+      properties:
+        old_path: {type: string}
+        new_path: {type: string}
+        is_folder: {type: boolean}
+
+    UsageResponse:
+      type: object
+      properties:
+        bucket: {type: string}
+        current: {type: integer, format: int64}
+        limit: {type: integer, format: int64}
+        percent: {type: number, format: float}
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string}
+                password: {type: string}
+                name: {type: string}
+      responses:
+        '200':
+          description: User registered successfully
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+
+  /auth/login:
+    post:
+      summary: Login and get token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string}
+                password: {type: string}
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  token: {type: string}
+                  userId: {type: string}
+                  bucket: {type: string}
+
+  /auth/password-reset:
+    post:
+      summary: Request password reset email
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: {type: string}
+      responses:
+        '200':
+          description: Reset email sent
+
+  /auth/verify-email:
+    post:
+      summary: Send verification email
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Verification email sent
+
+  /users/{uid}:
+    delete:
+      summary: Delete user account and associated data
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '204':
+          description: User deleted successfully
+
+  /bucket/{bucket}/files:
+    get:
+      summary: List all files in bucket
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
+      responses:
+        '200':
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bucket: {type: string}
+                  uid: {type: string}
+                  count: {type: integer}
+                  files:
+                    type: array
+                    items: {$ref: '#/components/schemas/File'}
+
+  /bucket/{bucket}/upload:
+    post:
+      summary: Upload a file
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                folder:
+                  type: string
+      responses:
+        '200':
+          description: Upload successful
+
+  /bucket/{bucket}/downloadFile/{file}:
+    get:
+      summary: Download a file
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: file
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /bucket/{bucket}/deleteFile/{file}:
+    delete:
+      summary: Delete a file
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: file
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: File deleted
+
+  /bucket/{bucket}/search:
+    get:
+      summary: Search files by query
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: q
+          in: query
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Search results
+
+  /bucket/{bucket}/folder/{folder}:
+    get:
+      summary: List files in a specific folder
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: folder
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Folder contents
+    post:
+      summary: Create a new folder
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: folder
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Folder created
+
+  /bucket/{bucket}/rename:
+    post:
+      summary: Rename a file or folder
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RenameRequest'}
+      responses:
+        '200':
+          description: Renamed successfully
+
+  /bucket/{bucket}/move:
+    post:
+      summary: Move a file or folder
+      tags: [Files]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MoveRequest'}
+      responses:
+        '200':
+          description: Moved successfully
+
+  /bucket/{bucket}/tagObject/{object}:
+    put:
+      summary: Add tags to an object
+      tags: [Tagging]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: object
+          in: path
+          required: true
+          schema: {type: string}
+        - name: tags
+          in: query
+          description: Comma-separated tags
+          schema: {type: string}
+      responses:
+        '200':
+          description: Tagged successfully
+
+  /bucket/{bucket}/objectTags/{object}:
+    get:
+      summary: Get tags for an object
+      tags: [Tagging]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: object
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Object tags
+
+  /bucket/{bucket}/analyze/{file}:
+    post:
+      summary: Trigger AI analysis for a file
+      tags: [AI]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+        - name: file
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '202':
+          description: Analysis triggered
+
+  /bucket/{bucket}/usage:
+    get:
+      summary: Get storage usage for a bucket
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Storage usage data
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UsageResponse'}
+
+  /events:
+    get:
+      summary: SSE stream for analysis events
+      tags: [AI]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
