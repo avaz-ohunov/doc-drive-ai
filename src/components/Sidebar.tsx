@@ -1,21 +1,45 @@
-import { Folder, User } from 'lucide-react';
+import { useState } from 'react';
+import { Folder, User, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface SidebarProps {
-  onFolderClick: (folderId: string) => void;
-  onNavigateToProfile?: () => void;
+export interface SidebarFolder {
+  id: string; // Полный путь, или ID
+  name: string;
 }
 
-// Список папок для бокового меню
-const folders = [
-  { id: '1', name: 'Документы', icon: '📄' },
-  { id: '2', name: 'Фотографии', icon: '📷' },
-  { id: '3', name: 'Проекты', icon: '💼' },
-  { id: '4', name: 'Видео', icon: '🎥' },
-  { id: '5', name: 'Музыка', icon: '🎵' },
-];
+interface SidebarProps {
+  folders: SidebarFolder[];
+  onFolderClick: (folderId: string) => void;
+  onCreateFolder?: (name: string) => void;
+  onNavigateToProfile?: () => void;
+  onFolderDragOver?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
+  onFolderDragLeave?: (folderId: string) => void;
+  onFolderDrop?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
+  activeDropFolderId?: string | null;
+}
 
-export function Sidebar({ onFolderClick, onNavigateToProfile }: SidebarProps) {
+export function Sidebar({
+  folders,
+  onFolderClick,
+  onCreateFolder,
+  onNavigateToProfile,
+  onFolderDragOver,
+  onFolderDragLeave,
+  onFolderDrop,
+  activeDropFolderId,
+}: SidebarProps) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newFolderName.trim() && onCreateFolder) {
+      onCreateFolder(newFolderName.trim());
+      setNewFolderName('');
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200 flex justify-center items-center">
@@ -25,15 +49,61 @@ export function Sidebar({ onFolderClick, onNavigateToProfile }: SidebarProps) {
       </div>
 
       <div className="flex-1 overflow-auto p-3">
-        <div className="mb-2 text-gray-500 px-3 py-2">Папки</div>
+        <div className="mb-2 text-gray-500 px-3 py-2 flex justify-between items-center">
+          <span>Папки</span>
+          {onCreateFolder && (
+            <button
+              onClick={() => setIsCreating(true)}
+              className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+              title="Создать папку"
+            >
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
+
+        {isCreating && (
+          <form onSubmit={handleCreateSubmit} className="px-3 mb-2">
+            <input
+              type="text"
+              autoFocus
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onBlur={() => {
+                if (!newFolderName.trim()) setIsCreating(false);
+              }}
+              placeholder="Имя папки"
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            />
+          </form>
+        )}
+
         <div className="space-y-1">
+          <button
+            onClick={() => onFolderClick('')}
+            onDragOver={(e) => onFolderDragOver?.(e, '')}
+            onDragLeave={() => onFolderDragLeave?.('')}
+            onDrop={(e) => onFolderDrop?.(e, '')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${
+              activeDropFolderId === '' ? 'bg-blue-100' : 'hover:bg-gray-100'
+            }`}
+          >
+            <Folder size={18} className="text-blue-500" />
+            <span className="truncate">Главная</span>
+          </button>
+
           {folders.map((folder) => (
             <button
               key={folder.id}
               onClick={() => onFolderClick(folder.id)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left cursor-pointer"
+              onDragOver={(e) => onFolderDragOver?.(e, folder.id)}
+              onDragLeave={() => onFolderDragLeave?.(folder.id)}
+              onDrop={(e) => onFolderDrop?.(e, folder.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${
+                activeDropFolderId === folder.id ? 'bg-blue-100' : 'hover:bg-gray-100'
+              }`}
             >
-              <span>{folder.icon}</span>
+              <Folder size={18} className="text-gray-400" />
               <span className="truncate">{folder.name}</span>
             </button>
           ))}

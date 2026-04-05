@@ -52,7 +52,7 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
               </div>
               <div>
                 <div className="text-gray-500 text-sm">Имя пользователя</div>
-                <div>Аваз Охунов</div>
+                <div>{auth.email.split('@')[0] || 'Пользователь'}</div>
               </div>
             </div>
 
@@ -62,8 +62,8 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
                 <div className="text-gray-500 text-sm">Email</div>
               </div>
               <div className="ml-8">
-                <a href="mailto:OkhunovAF23@st.ithub.ru">
-                  OkhunovAF23@st.ithub.ru
+                <a href={`mailto:${auth.email}`}>
+                  {auth.email}
                 </a>
               </div>
             </div>

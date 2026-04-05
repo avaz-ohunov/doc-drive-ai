@@ -8,6 +8,7 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreenProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,6 +25,10 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!name.trim()) {
+      setError('Имя пользователя обязательно');
+      return;
+    }
     if (password !== confirmPassword) {
       const message = 'Пароли не совпадают';
       setError(message);
@@ -31,7 +36,7 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
     }
     setIsSubmitting(true);
     try {
-      await apiRegister(email, password);
+      await apiRegister(email, password, name.trim());
       const auth = await apiLogin(email, password);
       onRegister(auth);
     } catch (err) {
@@ -52,11 +57,29 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-center mb-8">Регистрация в DocDriveAI</h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="text-red-600 text-sm text-center">{error}</div>
             )}
+
+            <div>
+              <label htmlFor="name" className="block mb-2 text-gray-700">
+                Имя пользователя
+              </label>
+              <div className="relative">
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Иван Иванов"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="email" className="block mb-2 text-gray-700">
                 Email
@@ -177,10 +200,10 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
               className="w-full border border-gray-300 hover:bg-gray-50 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M19.8 10.2273C19.8 9.51819 19.7364 8.83637 19.6182 8.18182H10.2V12.05H15.6109C15.3727 13.3 14.6182 14.3591 13.4864 15.0682V17.5773H16.7727C18.7182 15.8364 19.8 13.2727 19.8 10.2273Z" fill="#4285F4"/>
-                <path d="M10.2 20C12.9 20 15.1727 19.1045 16.7727 17.5773L13.4864 15.0682C12.5409 15.6682 11.3455 16.0227 10.2 16.0227C7.59545 16.0227 5.38182 14.2636 4.54091 11.9H1.14545V14.4909C2.73636 17.6591 6.20909 20 10.2 20Z" fill="#34A853"/>
-                <path d="M4.54091 11.9C4.34091 11.3 4.22727 10.6591 4.22727 10C4.22727 9.34091 4.34091 8.7 4.54091 8.1V5.50909H1.14545C0.472727 6.85909 0.0909091 8.38636 0.0909091 10C0.0909091 11.6136 0.472727 13.1409 1.14545 14.4909L4.54091 11.9Z" fill="#FBBC05"/>
-                <path d="M10.2 3.97727C11.4591 3.97727 12.5864 4.40909 13.4727 5.24091L16.3864 2.32727C15.1682 1.18636 12.9 0.5 10.2 0.5C6.20909 0.5 2.73636 2.84091 1.14545 5.50909L4.54091 8.1C5.38182 5.73636 7.59545 3.97727 10.2 3.97727Z" fill="#EA4335"/>
+                <path d="M19.8 10.2273C19.8 9.51819 19.7364 8.83637 19.6182 8.18182H10.2V12.05H15.6109C15.3727 13.3 14.6182 14.3591 13.4864 15.0682V17.5773H16.7727C18.7182 15.8364 19.8 13.2727 19.8 10.2273Z" fill="#4285F4" />
+                <path d="M10.2 20C12.9 20 15.1727 19.1045 16.7727 17.5773L13.4864 15.0682C12.5409 15.6682 11.3455 16.0227 10.2 16.0227C7.59545 16.0227 5.38182 14.2636 4.54091 11.9H1.14545V14.4909C2.73636 17.6591 6.20909 20 10.2 20Z" fill="#34A853" />
+                <path d="M4.54091 11.9C4.34091 11.3 4.22727 10.6591 4.22727 10C4.22727 9.34091 4.34091 8.7 4.54091 8.1V5.50909H1.14545C0.472727 6.85909 0.0909091 8.38636 0.0909091 10C0.0909091 11.6136 0.472727 13.1409 1.14545 14.4909L4.54091 11.9Z" fill="#FBBC05" />
+                <path d="M10.2 3.97727C11.4591 3.97727 12.5864 4.40909 13.4727 5.24091L16.3864 2.32727C15.1682 1.18636 12.9 0.5 10.2 0.5C6.20909 0.5 2.73636 2.84091 1.14545 5.50909L4.54091 8.1C5.38182 5.73636 7.59545 3.97727 10.2 3.97727Z" fill="#EA4335" />
               </svg>
               Регистрация через Google
             </button>
