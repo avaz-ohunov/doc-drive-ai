@@ -10,9 +10,9 @@ export interface SidebarFolder {
 interface SidebarProps {
   folders: SidebarFolder[];
   onFolderClick: (folderId: string) => void;
+  userName?: string;
   onCreateFolder?: (name: string) => void;
   onNavigateToProfile?: () => void;
-  onLogout?: () => void;
   onFolderDragOver?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
   onFolderDragLeave?: (folderId: string) => void;
   onFolderDrop?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
@@ -22,9 +22,9 @@ interface SidebarProps {
 export function Sidebar({
   folders,
   onFolderClick,
+  userName,
   onCreateFolder,
   onNavigateToProfile,
-  onLogout,
   onFolderDragOver,
   onFolderDragLeave,
   onFolderDrop,
@@ -117,7 +117,7 @@ export function Sidebar({
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <User size={20} />
-            <span>Профиль</span>
+            <span className="truncate">{userName || 'Профиль'}</span>
           </button>
         </div>
       )}

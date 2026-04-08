@@ -6,6 +6,7 @@ export const AUTH_EXPIRED_EVENT = 'auth:expired';
 export interface LoginResponse {
   success: boolean;
   token: string;
+  name?: string;
   userId: string;
   bucket: string;
 }
@@ -13,6 +14,7 @@ export interface LoginResponse {
 export interface AuthState {
   token: string;
   userId: string;
+  name?: string;
   bucket: string;
   email: string;
   name?: string;
@@ -132,6 +134,7 @@ export async function apiLogin(email: string, password: string): Promise<AuthSta
   return {
     token: data.token,
     userId: data.userId,
+    name: data.name,
     bucket: data.bucket,
     email,
   };
