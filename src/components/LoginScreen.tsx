@@ -46,7 +46,9 @@ export function LoginScreen({ onLogin, onNavigateToRegister }: LoginScreenProps)
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
+              <div className="text-sm text-center" style={{ color: '#dc2626' }}>
+                {error}
+              </div>
             )}
             <div>
               <label htmlFor="email" className="block mb-2 text-gray-700">

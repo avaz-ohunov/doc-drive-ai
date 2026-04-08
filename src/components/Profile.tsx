@@ -49,7 +49,7 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
               onClick={onLogout}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              Выйти из аккаунта
+              Выйти
             </button>
           </div>
 
@@ -60,7 +60,7 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
               </div>
               <div>
                 <div className="text-gray-500 text-sm">Имя пользователя</div>
-                <div>{auth.email.split('@')[0] || 'Пользователь'}</div>
+                <div>{auth.name?.trim() || auth.email.split('@')[0] || 'Пользователь'}</div>
               </div>
             </div>
 

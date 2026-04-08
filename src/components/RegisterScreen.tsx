@@ -38,7 +38,7 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
     try {
       await apiRegister(email, password, name.trim());
       const auth = await apiLogin(email, password);
-      onRegister(auth);
+      onRegister({ ...auth, name: name.trim() });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Не удалось выполнить регистрацию';
       setError(message);
@@ -60,7 +60,9 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
+              <div className="text-sm text-center" style={{ color: '#dc2626' }}>
+                {error}
+              </div>
             )}
 
             <div>

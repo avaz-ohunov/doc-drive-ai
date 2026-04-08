@@ -15,6 +15,7 @@ export interface AuthState {
   userId: string;
   bucket: string;
   email: string;
+  name?: string;
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -26,6 +27,40 @@ interface ApiErrorResponse {
 
 interface HandleResponseOptions {
   logoutOnUnauthorized?: boolean;
+}
+
+function localizeErrorMessage(message: string, status: number): string {
+  const normalized = message.trim().toLowerCase();
+
+  if (status === 400) return 'Некорректный запрос';
+  if (status === 401) return 'Неверный email или пароль';
+  if (status === 403) return 'Доступ запрещен';
+  if (status === 404) return 'Ресурс не найден';
+  if (status === 409) return 'Пользователь с таким email уже существует';
+  if (status >= 500) return 'Ошибка сервера. Попробуйте позже';
+
+  if (
+    normalized.includes('invalid credentials') ||
+    normalized.includes('invalid email') ||
+    normalized.includes('wrong password') ||
+    normalized.includes('unauthorized')
+  ) {
+    return 'Неверный email или пароль';
+  }
+
+  if (
+    normalized.includes('email already exists') ||
+    normalized.includes('user already exists') ||
+    normalized.includes('already registered')
+  ) {
+    return 'Пользователь с таким email уже существует';
+  }
+
+  if (normalized.includes('network') || normalized.includes('failed to fetch')) {
+    return 'Нет соединения с сервером';
+  }
+
+  return message;
 }
 
 function emitAuthExpired(): void {
@@ -55,7 +90,8 @@ async function handleResponse<T>(response: Response, options?: HandleResponseOpt
     } catch {
       // ignore parse errors
     }
-    const error = new Error(message) as Error & { status?: number; code?: string };
+    const localizedMessage = localizeErrorMessage(message, response.status);
+    const error = new Error(localizedMessage) as Error & { status?: number; code?: string };
     error.status = response.status;
     error.code = errorCode;
     throw error;

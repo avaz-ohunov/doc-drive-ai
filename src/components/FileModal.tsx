@@ -317,6 +317,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
             onClick={handleDelete}
             disabled={isWorking}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium shadow-sm disabled:opacity-50"
+            style={{ color: '#fff', backgroundColor: '#c10007' }}
           >
             <Trash2 size={18} /> Удалить
           </button>
