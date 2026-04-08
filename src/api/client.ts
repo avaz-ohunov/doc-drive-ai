@@ -17,7 +17,6 @@ export interface AuthState {
   name?: string;
   bucket: string;
   email: string;
-  name?: string;
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -39,7 +38,6 @@ function localizeErrorMessage(message: string, status: number): string {
   if (status === 403) return 'Доступ запрещен';
   if (status === 404) return 'Ресурс не найден';
   if (status === 409) return 'Пользователь с таким email уже существует';
-  if (status >= 500) return 'Ошибка сервера. Попробуйте позже';
 
   if (
     normalized.includes('invalid credentials') ||

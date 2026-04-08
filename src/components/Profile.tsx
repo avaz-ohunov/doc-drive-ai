@@ -60,7 +60,7 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
               </div>
               <div>
                 <div className="text-gray-500 text-sm">Имя пользователя</div>
-                <div>{auth.name || auth.email.split('@')[0] || 'Пользователь'}</div>
+                <div>{auth.name}</div>
               </div>
             </div>
 
