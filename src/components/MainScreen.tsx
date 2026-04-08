@@ -621,9 +621,9 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
           setSelectedFolderIds(new Set());
           setSelectedFileIds(new Set());
         }}
+        userName={auth.name}
         onCreateFolder={handleCreateFolder}
         onNavigateToProfile={onNavigateToProfile}
-        onLogout={onLogout}
         onFolderDragOver={(e, folderId) => {
           if (!draggedItem) return;
           if (!canDropToFolder(draggedItem, folderId)) return;
