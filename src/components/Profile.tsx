@@ -43,7 +43,15 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
         </button>
 
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="mb-8">Профиль</h1>
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="m-0">Профиль</h1>
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Выйти из аккаунта
+            </button>
+          </div>
 
           <div className="space-y-6">
             <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">

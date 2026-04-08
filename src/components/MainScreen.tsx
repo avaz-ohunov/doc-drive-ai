@@ -29,9 +29,10 @@ export interface FileItem {
 interface MainScreenProps {
   auth: AuthState;
   onNavigateToProfile: () => void;
+  onLogout: () => void;
 }
 
-export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
+export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenProps) {
   const EMPTY_FILTERS: FileFilters = {
     globalSearch: '',
     category: '',
@@ -143,10 +144,10 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
       const mapped = res.files
         ? (debouncedSearch.trim().length >= 2
           ? res.files.map((file) => {
-              const normalizedPath = normalizePath(file.path);
-              const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-              return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
-            })
+            const normalizedPath = normalizePath(file.path);
+            const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
+            return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
+          })
           : buildFolderView(res.files, currentFolder))
         : [];
       setFiles(mapped);
@@ -174,10 +175,10 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
         const mapped = res.files
           ? (debouncedSearch.trim().length >= 2
             ? res.files.map((file) => {
-                const normalizedPath = normalizePath(file.path);
-                const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-                return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
-              })
+              const normalizedPath = normalizePath(file.path);
+              const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
+              return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
+            })
             : buildFolderView(res.files, currentFolder))
           : [];
         setFiles(mapped);
@@ -622,6 +623,7 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
         }}
         onCreateFolder={handleCreateFolder}
         onNavigateToProfile={onNavigateToProfile}
+        onLogout={onLogout}
         onFolderDragOver={(e, folderId) => {
           if (!draggedItem) return;
           if (!canDropToFolder(draggedItem, folderId)) return;
@@ -709,11 +711,10 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
                         e.preventDefault();
                         moveDraggedItemToFolder(crumb.path);
                       }}
-                      className={`transition-colors rounded px-1 ${
-                        dropTargetFolder === crumb.path
-                          ? 'bg-blue-100 text-blue-700'
-                          : `hover:text-blue-600 ${idx === breadcrumbs.length - 1 ? 'font-medium text-gray-900' : ''}`
-                      }`}
+                      className={`transition-colors rounded px-1 ${dropTargetFolder === crumb.path
+                        ? 'bg-blue-100 text-blue-700'
+                        : `hover:text-blue-600 ${idx === breadcrumbs.length - 1 ? 'font-medium text-gray-900' : ''}`
+                        }`}
                     >
                       {crumb.name}
                     </button>
@@ -775,13 +776,21 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 flex items-center justify-between gap-3">
               <div className="text-red-700 text-sm">{error}</div>
-              <button
-                onClick={loadFiles}
-                disabled={isLoading}
-                className="shrink-0 px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Повторить
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadFiles}
+                  disabled={isLoading}
+                  className="shrink-0 px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Повторить
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="shrink-0 px-3 py-1.5 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                >
+                  Выйти
+                </button>
+              </div>
             </div>
           )}
 
@@ -824,15 +833,14 @@ export function MainScreen({ auth, onNavigateToProfile }: MainScreenProps) {
                     e.preventDefault();
                     handleDropOnFolder(item);
                   }}
-                  className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 transition-colors w-full text-left cursor-pointer items-center ${
-                    dropTargetFolder === item.id
-                      ? 'bg-blue-100'
-                      : selectedFolderIds.has(item.id)
-                        ? 'bg-amber-100 border-2 border-amber-300 shadow-inner'
-                        : selectedFileIds.has(item.id)
-                          ? 'bg-blue-100 border-2 border-blue-300 shadow-inner'
+                  className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 transition-colors w-full text-left cursor-pointer items-center ${dropTargetFolder === item.id
+                    ? 'bg-blue-100'
+                    : selectedFolderIds.has(item.id)
+                      ? 'bg-amber-100 border-2 border-amber-300 shadow-inner'
+                      : selectedFileIds.has(item.id)
+                        ? 'bg-blue-100 border-2 border-blue-300 shadow-inner'
                         : 'hover:bg-blue-50'
-                  }`}
+                    }`}
                 >
                   <div className="col-span-5 flex items-center gap-2 overflow-hidden">
                     {item.type === 'folder' ? (

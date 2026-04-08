@@ -35,6 +35,12 @@ function emitAuthExpired(): void {
 }
 
 async function handleResponse<T>(response: Response, options?: HandleResponseOptions): Promise<T> {
+  const shouldLogout = options?.logoutOnUnauthorized ?? true;
+
+  if (response.status === 401 && shouldLogout) {
+    emitAuthExpired();
+  }
+
   if (!response.ok) {
     let message = `HTTP error ${response.status}`;
     let errorCode: string | undefined;
@@ -48,9 +54,6 @@ async function handleResponse<T>(response: Response, options?: HandleResponseOpt
       }
     } catch {
       // ignore parse errors
-    }
-    if (options?.logoutOnUnauthorized && response.status === 401) {
-      emitAuthExpired();
     }
     const error = new Error(message) as Error & { status?: number; code?: string };
     error.status = response.status;
@@ -84,7 +87,7 @@ export async function apiLogin(email: string, password: string): Promise<AuthSta
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await handleResponse<LoginResponse>(res);
+  const data = await handleResponse<LoginResponse>(res, { logoutOnUnauthorized: false });
 
   if (!data.success || !data.token) {
     throw new Error('Не удалось выполнить вход');
@@ -105,7 +108,7 @@ export async function apiRegister(email: string, password: string, name?: string
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ email, password, name }),
-  }).then((res) => handleResponse<void>(res));
+  }).then((res) => handleResponse<void>(res, { logoutOnUnauthorized: false }));
 }
 
 export async function apiPasswordReset(email: string): Promise<void> {
@@ -114,7 +117,7 @@ export async function apiPasswordReset(email: string): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   });
-  await handleResponse<void>(res);
+  await handleResponse<void>(res, { logoutOnUnauthorized: false });
 }
 
 export async function apiVerifyEmail(token: string): Promise<void> {

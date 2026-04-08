@@ -12,6 +12,7 @@ interface SidebarProps {
   onFolderClick: (folderId: string) => void;
   onCreateFolder?: (name: string) => void;
   onNavigateToProfile?: () => void;
+  onLogout?: () => void;
   onFolderDragOver?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
   onFolderDragLeave?: (folderId: string) => void;
   onFolderDrop?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
@@ -23,6 +24,7 @@ export function Sidebar({
   onFolderClick,
   onCreateFolder,
   onNavigateToProfile,
+  onLogout,
   onFolderDragOver,
   onFolderDragLeave,
   onFolderDrop,
@@ -84,9 +86,8 @@ export function Sidebar({
             onDragOver={(e) => onFolderDragOver?.(e, '')}
             onDragLeave={() => onFolderDragLeave?.('')}
             onDrop={(e) => onFolderDrop?.(e, '')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${
-              activeDropFolderId === '' ? 'bg-blue-100' : 'hover:bg-gray-100'
-            }`}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${activeDropFolderId === '' ? 'bg-blue-100' : 'hover:bg-gray-100'
+              }`}
           >
             <Folder size={18} className="text-blue-500" />
             <span className="truncate">Главная</span>
@@ -99,9 +100,8 @@ export function Sidebar({
               onDragOver={(e) => onFolderDragOver?.(e, folder.id)}
               onDragLeave={() => onFolderDragLeave?.(folder.id)}
               onDrop={(e) => onFolderDrop?.(e, folder.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${
-                activeDropFolderId === folder.id ? 'bg-blue-100' : 'hover:bg-gray-100'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${activeDropFolderId === folder.id ? 'bg-blue-100' : 'hover:bg-gray-100'
+                }`}
             >
               <Folder size={18} className="text-gray-400" />
               <span className="truncate">{folder.name}</span>

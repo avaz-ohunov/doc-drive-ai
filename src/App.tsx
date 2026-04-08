@@ -83,7 +83,11 @@ export default function App() {
           path="/"
           element={
             auth ? (
-              <MainScreen auth={auth} onNavigateToProfile={() => navigate('/profile')} />
+              <MainScreen
+                auth={auth}
+                onNavigateToProfile={() => navigate('/profile')}
+                onLogout={handleLogout}
+              />
             ) : (
               <Navigate to="/login" replace />
             )
