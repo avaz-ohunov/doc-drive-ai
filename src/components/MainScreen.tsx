@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, Folder, File, FileText, FileImage,
   FileVideo, FileArchive, ChevronRight, Plus
@@ -33,6 +34,8 @@ interface MainScreenProps {
 }
 
 export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const EMPTY_FILTERS: FileFilters = {
     globalSearch: '',
     category: '',
@@ -62,6 +65,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const selectionAreaRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [folderPathToSlug, setFolderPathToSlug] = useState<Map<string, string>>(new Map());
+  const [folderSlugToPath, setFolderSlugToPath] = useState<Map<string, string>>(new Map());
 
   if (typeof document !== 'undefined' && document.title !== 'DocDriveAI') {
     document.title = 'DocDriveAI';
@@ -77,6 +82,51 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
 
   const normalizePath = (value: string): string =>
     value.replace(/^\/+/, '').replace(/\/+$/, '');
+
+  const toSlugSegment = (segment: string): string =>
+    segment
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\p{L}\p{N}-]+/gu, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      || 'folder';
+
+  const toSlugPath = (folderPath: string): string =>
+    normalizePath(folderPath)
+      .split('/')
+      .filter(Boolean)
+      .map(toSlugSegment)
+      .join('/');
+
+  const buildFolderRouteMaps = (apiFiles: ApiFile[]) => {
+    const pathToSlug = new Map<string, string>();
+    const slugToPath = new Map<string, string>();
+    const folderPaths = new Set<string>();
+
+    for (const apiFile of apiFiles) {
+      const fullPath = normalizePath(apiFile.path);
+      if (!fullPath) continue;
+      const parts = fullPath.split('/').filter(Boolean);
+      const depth = apiFile.is_dir || apiFile.path.endsWith('/') ? parts.length : parts.length - 1;
+      for (let i = 0; i < depth; i += 1) {
+        const folderPath = parts.slice(0, i + 1).join('/');
+        folderPaths.add(folderPath);
+      }
+    }
+
+    for (const folderPath of folderPaths) {
+      const slugPath = toSlugPath(folderPath);
+      pathToSlug.set(folderPath, slugPath);
+      if (!slugToPath.has(slugPath)) {
+        slugToPath.set(slugPath, folderPath);
+      }
+    }
+
+    setFolderPathToSlug(pathToSlug);
+    setFolderSlugToPath(slugToPath);
+  };
 
   const toFileItem = (file: ApiFile, path: string, name: string, isDir: boolean): FileItem => ({
     id: path,
@@ -141,6 +191,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         res = await apiSearchFiles(auth.bucket, auth.token, debouncedSearch.trim());
       } else {
         res = await apiListFiles(auth.bucket, auth.token);
+        buildFolderRouteMaps(res.files || []);
       }
 
       const mapped = res.files
@@ -172,6 +223,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
           res = await apiSearchFiles(auth.bucket, auth.token, debouncedSearch.trim());
         } else {
           res = await apiListFiles(auth.bucket, auth.token);
+          buildFolderRouteMaps(res.files || []);
         }
         if (cancelled) return;
         const mapped = res.files
@@ -195,6 +247,31 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     fetchFiles();
     return () => { cancelled = true; };
   }, [auth.bucket, auth.token, currentFolder, debouncedSearch]);
+
+  useEffect(() => {
+    const slugPath = normalizePath(location.pathname);
+    if (!slugPath) {
+      if (currentFolder) {
+        setCurrentFolder('');
+      }
+      return;
+    }
+
+    const resolvedFolderPath = folderSlugToPath.get(slugPath);
+    if (resolvedFolderPath && resolvedFolderPath !== currentFolder) {
+      setCurrentFolder(resolvedFolderPath);
+      setFilters(prev => ({ ...prev, globalSearch: '' }));
+      setSelectedFolderIds(new Set());
+      setSelectedFileIds(new Set());
+    }
+  }, [location.pathname, folderSlugToPath, currentFolder]);
+
+  useEffect(() => {
+    const targetPath = currentFolder ? `/${folderPathToSlug.get(currentFolder) || toSlugPath(currentFolder)}` : '/';
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [currentFolder, folderPathToSlug, location.pathname, navigate]);
 
   // SSE Подписка на события анализа
   useEffect(() => {

@@ -83,7 +83,7 @@ export default function App() {
           }
         />
         <Route
-          path="/"
+          path="/*"
           element={
             auth ? (
               <MainScreen
