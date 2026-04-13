@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Mail, User, Trash2 } from 'lucide-react';
 import { apiDeleteUser, type AuthState } from '../api/client';
+import { ThemeToggle } from './ThemeToggle';
 
 interface ProfileProps {
   auth: AuthState;
@@ -43,14 +44,17 @@ export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
         </button>
 
         <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-8 gap-3 flex-wrap">
             <h1 className="m-0">Профиль</h1>
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Выйти
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                onClick={onLogout}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Выйти
+              </button>
+            </div>
           </div>
 
           <div className="space-y-6">

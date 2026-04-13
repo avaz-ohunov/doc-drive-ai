@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Folder, User, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ThemeToggle } from './ThemeToggle';
 
 export interface SidebarFolder {
   id: string; // Полный путь, или ID
@@ -59,17 +60,19 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-auto p-3">
-        <div className="mb-2 text-gray-500 px-3 py-2 flex justify-between items-center">
-          <span>Папки</span>
-          {onCreateFolder && (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
-              title="Создать папку"
-            >
-              <Plus size={16} />
-            </button>
-          )}
+        <div className="mb-2 text-gray-500 px-3 py-2 flex justify-between items-center gap-2">
+          <span className="min-w-0 truncate">Папки</span>
+          <div className="flex items-center gap-1">
+            {onCreateFolder && (
+              <button
+                onClick={() => setIsCreating(true)}
+                className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                title="Создать папку"
+              >
+                <Plus size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {isCreating && (

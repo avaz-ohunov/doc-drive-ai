@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Mail, Lock, Shield, Eye, EyeOff } from 'lucide-react';
 import { apiLogin, apiRegister, type AuthState } from '../api/client';
+import { ThemeToggle } from './ThemeToggle';
 
 interface RegisterScreenProps {
   onRegister: (auth: AuthState) => void;
@@ -55,7 +56,10 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-center mb-8">Регистрация в DocDriveAI</h1>
