@@ -31,6 +31,7 @@ interface HandleResponseOptions {
 }
 
 function localizeErrorMessage(message: string, status: number): string {
+  // Нормализуем текст, чтобы устойчиво матчить английские ошибки бэкенда.
   const normalized = message.trim().toLowerCase();
 
   if (status === 400) return 'Некорректный запрос';
@@ -103,6 +104,7 @@ async function handleResponse<T>(response: Response, options?: HandleResponseOpt
   if (!text) {
     return undefined as unknown as T;
   }
+  // Читаем как text, чтобы корректно обрабатывать пустые/нетипичные ответы.
   return JSON.parse(text) as T;
 }
 
@@ -263,6 +265,7 @@ export async function apiUploadFile(
   file: File,
   folder?: string,
 ): Promise<void> {
+  // Для загрузки файлов используем FormData, а не JSON.
   const formData = new FormData();
   formData.append('file', file);
   if (folder) {
@@ -520,6 +523,7 @@ export function createSSEConnection(
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
+        // Последнюю неполную строку сохраняем до следующей порции данных.
         buffer = lines.pop() || '';
 
         for (const line of lines) {

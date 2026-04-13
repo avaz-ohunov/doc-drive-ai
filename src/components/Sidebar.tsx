@@ -33,6 +33,7 @@ export function Sidebar({
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
+  // Создаём папку из боковой панели и закрываем мини-форму.
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newFolderName.trim() && onCreateFolder) {

@@ -8,6 +8,7 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreenProps) {
+  // Поля формы и служебное состояние процесса регистрации.
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +37,7 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
     }
     setIsSubmitting(true);
     try {
+      // После регистрации сразу авторизуем пользователя.
       await apiRegister(email, password, name.trim());
       const auth = await apiLogin(email, password);
       onRegister({ ...auth, name: name.trim() });
@@ -117,6 +119,7 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
                 />
                 <button
                   type="button"
+                  // Локально переключаем видимость поля пароля.
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="ml-3 text-gray-400 hover:text-gray-600 cursor-pointer"
                   aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
@@ -143,6 +146,7 @@ export function RegisterScreen({ onRegister, onNavigateToLogin }: RegisterScreen
                 />
                 <button
                   type="button"
+                  // Независимо управляем видимостью подтверждения пароля.
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                   className="ml-3 text-gray-400 hover:text-gray-600 cursor-pointer"
                   aria-label={showConfirmPassword ? 'Скрыть пароль' : 'Показать пароль'}

@@ -96,6 +96,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     const folderMap = new Map<string, FileItem>();
     const result: FileItem[] = [];
 
+    // Из "плоского" списка путей строим витрину текущей папки.
     for (const apiFile of apiFiles) {
       const fullPath = normalizePath(apiFile.path);
       if (!fullPath) continue;
@@ -135,6 +136,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     setError(null);
     try {
       let res;
+      // Используем серверный поиск только от 2 символов.
       if (debouncedSearch.trim().length >= 2) {
         res = await apiSearchFiles(auth.bucket, auth.token, debouncedSearch.trim());
       } else {
@@ -270,6 +272,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       return;
     }
 
+    // Обычный клик очищает множественное выделение.
     if (!isMultiSelect && (selectedFolderIds.size > 0 || selectedFileIds.size > 0)) {
       setSelectedFolderIds(new Set());
       setSelectedFileIds(new Set());
@@ -324,6 +327,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   };
 
   const canDropToFolder = (item: FileItem, targetFolderId: string): boolean => {
+    // Запрещаем перенос в себя, потомка или ту же самую директорию.
     if (item.id === targetFolderId) return false;
     if (item.type === 'folder' && targetFolderId.startsWith(`${item.id}/`)) return false;
     return getParentPath(item.id) !== targetFolderId;

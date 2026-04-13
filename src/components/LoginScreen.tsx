@@ -8,6 +8,7 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLogin, onNavigateToRegister }: LoginScreenProps) {
+  // Локальное состояние формы авторизации.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,11 +22,13 @@ export function LoginScreen({ onLogin, onNavigateToRegister }: LoginScreenProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // Блокируем повторную отправку до завершения запроса.
     setIsSubmitting(true);
     try {
       const auth = await apiLogin(email, password);
       onLogin(auth);
     } catch (err) {
+      // Ошибка входа
       const message = err instanceof Error ? err.message : 'Не удалось выполнить вход';
       setError(message);
     } finally {
@@ -85,6 +88,7 @@ export function LoginScreen({ onLogin, onNavigateToRegister }: LoginScreenProps)
               />
               <button
                 type="button"
+                // Скрытие и отображение пароля
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="ml-3 text-gray-400 hover:text-gray-600 cursor-pointer"
                 aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}

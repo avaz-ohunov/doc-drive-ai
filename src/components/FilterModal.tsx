@@ -19,6 +19,7 @@ interface FilterModalProps {
 }
 
 export function FilterModal({ filters, onFiltersChange, onReset, onClose }: FilterModalProps) {
+  // Унифицированный апдейт любого поля фильтра.
   const updateField = <K extends keyof FileFilters>(key: K, value: FileFilters[K]) => {
     onFiltersChange({
       ...filters,

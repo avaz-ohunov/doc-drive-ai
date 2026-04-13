@@ -39,6 +39,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
     try {
       setIsWorking(true);
       const blob = await apiDownloadFile(auth.bucket, auth.token, file.id);
+      // Скачивание через временную ссылку blob в браузере.
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -75,6 +76,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
     }
     try {
       setIsWorking(true);
+      // Меняем только последнее звено пути (имя объекта).
       const parts = file.id.split('/');
       parts[parts.length - 1] = newName.trim();
       const newObPath = parts.join('/');
@@ -125,6 +127,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
     try {
       setIsWorking(true);
       const currentTags = file.tags || [];
+      // Не отправляем запрос, если тег уже существует.
       if (currentTags.includes(newTag.trim())) return;
 
       const updatedTagsStr = [...currentTags, newTag.trim()].join(',');

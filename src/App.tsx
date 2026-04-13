@@ -21,12 +21,14 @@ export default function App() {
   });
   const navigate = useNavigate();
 
+  // После успешной авторизации сохраняем сессию локально.
   const handleLogin = (authState: AuthState) => {
     setAuth(authState);
     localStorage.setItem('auth_session', JSON.stringify(authState));
     navigate('/');
   };
 
+  // Логика регистрации повторяет вход: сохраняем полученный токен и профиль.
   const handleRegister = (authState: AuthState) => {
     setAuth(authState);
     localStorage.setItem('auth_session', JSON.stringify(authState));
@@ -40,6 +42,7 @@ export default function App() {
   }, [navigate]);
 
   useEffect(() => {
+    // Глобально реагируем на истекший токен из API-слоя.
     const handleAuthExpired = () => {
       handleLogout();
     };
