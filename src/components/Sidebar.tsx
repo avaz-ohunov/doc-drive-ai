@@ -9,6 +9,8 @@ export interface SidebarFolder {
 
 interface SidebarProps {
   folders: SidebarFolder[];
+  /** Корневая папка, внутри которой сейчас открыт контент; `null` — выбрана «Главная». */
+  selectedRootFolderId: string | null;
   onFolderClick: (folderId: string) => void;
   userName?: string;
   onCreateFolder?: (name: string) => void;
@@ -21,6 +23,7 @@ interface SidebarProps {
 
 export function Sidebar({
   folders,
+  selectedRootFolderId,
   onFolderClick,
   userName,
   onCreateFolder,
@@ -32,6 +35,10 @@ export function Sidebar({
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+
+  const homeActive = selectedRootFolderId === null;
+  const rowText = (active: boolean) =>
+    active ? 'text-gray-900 font-medium' : 'text-gray-400';
 
   // Создаём папку из боковой панели и закрываем мини-форму.
   const handleCreateSubmit = (e: React.FormEvent) => {
@@ -87,10 +94,10 @@ export function Sidebar({
             onDragOver={(e) => onFolderDragOver?.(e, '')}
             onDragLeave={() => onFolderDragLeave?.('')}
             onDrop={(e) => onFolderDrop?.(e, '')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${activeDropFolderId === '' ? 'bg-blue-100' : 'hover:bg-gray-100'
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${rowText(homeActive)} ${activeDropFolderId === '' ? 'bg-blue-100' : 'hover:bg-gray-100'
               }`}
           >
-            <Folder size={18} className="text-blue-500" />
+            <Folder size={18} className={homeActive ? 'text-gray-900 shrink-0' : 'text-gray-400 shrink-0'} />
             <span className="truncate">Главная</span>
           </button>
 
@@ -101,10 +108,10 @@ export function Sidebar({
               onDragOver={(e) => onFolderDragOver?.(e, folder.id)}
               onDragLeave={() => onFolderDragLeave?.(folder.id)}
               onDrop={(e) => onFolderDrop?.(e, folder.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${activeDropFolderId === folder.id ? 'bg-blue-100' : 'hover:bg-gray-100'
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left cursor-pointer ${rowText(selectedRootFolderId === folder.id)} ${activeDropFolderId === folder.id ? 'bg-blue-100' : 'hover:bg-gray-100'
                 }`}
             >
-              <Folder size={18} className="text-gray-400" />
+              <Folder size={18} className={selectedRootFolderId === folder.id ? 'text-gray-900 shrink-0' : 'text-gray-400 shrink-0'} />
               <span className="truncate">{folder.name}</span>
             </button>
           ))}

@@ -68,6 +68,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   const rowRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [folderPathToSlug, setFolderPathToSlug] = useState<Map<string, string>>(new Map());
   const [folderSlugToPath, setFolderSlugToPath] = useState<Map<string, string>>(new Map());
+  const [rootSidebarFolders, setRootSidebarFolders] = useState<SidebarFolder[]>([]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -131,6 +132,25 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
 
     setFolderPathToSlug(pathToSlug);
     setFolderSlugToPath(slugToPath);
+  };
+
+  const buildRootSidebarFolders = (apiFiles: ApiFile[]): SidebarFolder[] => {
+    const roots = new Set<string>();
+    for (const apiFile of apiFiles) {
+      const fullPath = normalizePath(decodeURIComponent(apiFile.path));
+      if (!fullPath) continue;
+      const parts = fullPath.split('/').filter(Boolean);
+      if (parts.length === 0) continue;
+      const isDir = apiFile.is_dir || apiFile.path.endsWith('/');
+      if (parts.length === 1) {
+        if (isDir) roots.add(parts[0]);
+      } else {
+        roots.add(parts[0]);
+      }
+    }
+    return Array.from(roots)
+      .sort((a, b) => a.localeCompare(b, 'ru', { sensitivity: 'base' }))
+      .map((id) => ({ id, name: id }));
   };
 
   const toFileItem = (file: ApiFile, path: string, rawPath: string, name: string, isDir: boolean): FileItem => ({
@@ -240,6 +260,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       } else {
         res = await apiListFiles(auth.bucket, auth.token);
         buildFolderRouteMaps(res.files || []);
+        setRootSidebarFolders(buildRootSidebarFolders(res.files || []));
       }
 
       const folderSizes = buildFolderSizes(res.files || []);
@@ -278,6 +299,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         } else {
           res = await apiListFiles(auth.bucket, auth.token);
           buildFolderRouteMaps(res.files || []);
+          setRootSidebarFolders(buildRootSidebarFolders(res.files || []));
         }
         if (cancelled) return;
         const folderSizes = buildFolderSizes(res.files || []);
@@ -742,9 +764,10 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     });
   }, [files, filters]);
 
-  const sidebarFolders: SidebarFolder[] = useMemo(() => {
-    return files.filter(f => f.type === 'folder').map(f => ({ id: f.id, name: f.name }));
-  }, [files]);
+  const selectedSidebarRootId = useMemo(() => {
+    if (!currentFolder) return null;
+    return currentFolder.split('/').filter(Boolean)[0] ?? null;
+  }, [currentFolder]);
 
   const breadcrumbs = useMemo(() => {
     if (!currentFolder) return [];
@@ -758,7 +781,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   return (
     <div className="flex h-screen">
       <Sidebar
-        folders={sidebarFolders}
+        folders={rootSidebarFolders}
+        selectedRootFolderId={selectedSidebarRootId}
         onFolderClick={(id) => {
           const slug = id ? (folderPathToSlug.get(id) || toSlugPath(id)) : '';
           navigate(slug ? '/' + slug : '/');
