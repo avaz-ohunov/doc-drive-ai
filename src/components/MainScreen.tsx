@@ -16,7 +16,8 @@ import {
 } from '../api/client';
 
 export interface FileItem {
-  id: string; // path
+  id: string; // decoded, logical path
+  rawPath: string; // raw S3 key
   name: string;
   type: 'folder' | 'file';
   fileType?: string;
@@ -128,8 +129,9 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     setFolderSlugToPath(slugToPath);
   };
 
-  const toFileItem = (file: ApiFile, path: string, name: string, isDir: boolean): FileItem => ({
+  const toFileItem = (file: ApiFile, path: string, rawPath: string, name: string, isDir: boolean): FileItem => ({
     id: path,
+    rawPath,
     name,
     type: isDir ? 'folder' : 'file',
     fileType: isDir ? undefined : file.content_type || undefined,
@@ -162,7 +164,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         const folderName = parts[0];
         const folderPath = normalizedFolder ? `${normalizedFolder}/${folderName}` : folderName;
         if (!folderMap.has(folderPath)) {
-          folderMap.set(folderPath, toFileItem(apiFile, folderPath, folderName, true));
+          // Для виртуальных папок rawPath делаем из её логического пути (он будет правильно закодирован при отправке)
+          folderMap.set(folderPath, toFileItem(apiFile, folderPath, folderPath, folderName, true));
           result.push(folderMap.get(folderPath)!);
         }
         continue;
@@ -172,10 +175,14 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       const isDir = apiFile.is_dir || apiFile.path.endsWith('/');
       const itemPath = isDir ? normalizePath(fullPath) : fullPath;
 
-      // Если папка уже добавлена как виртуальная (через дочерние элементы), не дублируем её.
+      // Если папка уже добавлена как виртуальная (через дочерние элементы) или как явная, пропускаем её,
       if (isDir && folderMap.has(itemPath)) continue;
 
-      result.push(toFileItem(apiFile, itemPath, itemName, isDir));
+      const mappedItem = toFileItem(apiFile, itemPath, apiFile.path, itemName, isDir);
+      if (isDir) {
+        folderMap.set(itemPath, mappedItem);
+      }
+      result.push(mappedItem);
     }
 
     return result;
@@ -199,7 +206,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
           ? res.files.map((file) => {
             const normalizedPath = normalizePath(decodeURIComponent(file.path));
             const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-            return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
+            return toFileItem(file, normalizedPath, file.path, fallbackName, file.is_dir || file.path.endsWith('/'));
           })
           : buildFolderView(res.files, currentFolder))
         : [];
@@ -231,7 +238,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
             ? res.files.map((file) => {
               const normalizedPath = normalizePath(decodeURIComponent(file.path));
               const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-              return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
+              return toFileItem(file, normalizedPath, file.path, fallbackName, file.is_dir || file.path.endsWith('/'));
             })
             : buildFolderView(res.files, currentFolder))
           : [];
@@ -451,7 +458,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       await apiMoveObject(
         auth.bucket,
         auth.token,
-        draggedItem.id,
+        draggedItem.rawPath,
         newPath,
         draggedItem.type === 'folder',
       );
@@ -488,20 +495,24 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     try {
       setIsLoading(true);
       setError(null);
-      // Удаляем папки рекурсивно на сервере.
-      for (const folderPath of foldersToDelete) {
+      // Удаляем папки рекурсивно на сервере (используем rawPath).
+      const rawFoldersToDelete = foldersToDelete.map(folderId =>
+        files.find(f => f.id === folderId)?.rawPath || folderId
+      );
+      for (const folderPath of rawFoldersToDelete) {
         await apiDeleteFolder(auth.bucket, auth.token, folderPath);
       }
 
       // Удаляем файлы, которые не входят в удалённые папки.
       for (const filePath of filesToDelete) {
+        const fileItem = files.find(f => f.id === filePath);
         const normalizedFilePath = normalizePath(filePath);
         const coveredByFolder = foldersToDelete.some(folder => {
           const normalizedFolder = normalizePath(folder);
           return normalizedFilePath === normalizedFolder || normalizedFilePath.startsWith(`${normalizedFolder}/`);
         });
-        if (!coveredByFolder) {
-          await apiDeleteFile(auth.bucket, auth.token, filePath);
+        if (!coveredByFolder && fileItem) {
+          await apiDeleteFile(auth.bucket, auth.token, fileItem.rawPath);
         }
       }
 
