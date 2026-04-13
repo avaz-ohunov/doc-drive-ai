@@ -11,12 +11,12 @@ interface ProfileProps {
 export function Profile({ auth, onLogout, onNavigateBack }: ProfileProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   useEffect(() => {
-    document.title = 'DocDriveAI – Мой профиль';
+    document.title = 'Мой профиль';
   }, []);
 
   // Обработка удаления аккаунта с подтверждением
   const handleDeleteAccount = async () => {
-    if (window.confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.')) {
+    if (window.confirm('Вы уверены, что хотите удалить аккаунт? Восстановить его потом будет невозможно')) {
       setIsDeleting(true);
       try {
         await apiDeleteUser(auth.userId, auth.token);

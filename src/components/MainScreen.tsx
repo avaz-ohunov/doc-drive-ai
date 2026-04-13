@@ -69,9 +69,13 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   const [folderPathToSlug, setFolderPathToSlug] = useState<Map<string, string>>(new Map());
   const [folderSlugToPath, setFolderSlugToPath] = useState<Map<string, string>>(new Map());
 
-  if (typeof document !== 'undefined' && document.title !== 'DocDriveAI') {
-    document.title = 'DocDriveAI';
-  }
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const currentFolderName = currentFolder.split('/').filter(Boolean).pop();
+    document.title = currentFolderName
+      ? currentFolderName
+      : 'DocDriveAI';
+  }, [currentFolder]);
 
   // Дебаунс для поиска
   useEffect(() => {
@@ -142,7 +146,41 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     tags: file.analysis_tags,
   });
 
-  const buildFolderView = (apiFiles: ApiFile[], folder: string): FileItem[] => {
+  const formatBytes = (sizeInBytes: number): string => {
+    if (!Number.isFinite(sizeInBytes) || sizeInBytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let value = sizeInBytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+    const digits = value >= 100 ? 0 : value >= 10 ? 1 : 2;
+    return `${value.toFixed(digits)} ${units[unitIndex]}`;
+  };
+
+  const buildFolderSizes = (apiFiles: ApiFile[]): Map<string, number> => {
+    const sizes = new Map<string, number>();
+
+    for (const apiFile of apiFiles) {
+      const isDir = apiFile.is_dir || apiFile.path.endsWith('/');
+      if (isDir) continue;
+
+      const fullPath = normalizePath(decodeURIComponent(apiFile.path));
+      const parts = fullPath.split('/').filter(Boolean);
+      if (parts.length < 2) continue;
+
+      const fileSize = Number.isFinite(apiFile.size) ? Math.max(0, apiFile.size) : 0;
+      for (let i = 0; i < parts.length - 1; i += 1) {
+        const folderPath = parts.slice(0, i + 1).join('/');
+        sizes.set(folderPath, (sizes.get(folderPath) || 0) + fileSize);
+      }
+    }
+
+    return sizes;
+  };
+
+  const buildFolderView = (apiFiles: ApiFile[], folder: string, folderSizes: Map<string, number>): FileItem[] => {
     const normalizedFolder = normalizePath(folder);
     const prefix = normalizedFolder ? `${normalizedFolder}/` : '';
     const folderMap = new Map<string, FileItem>();
@@ -165,7 +203,9 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         const folderPath = normalizedFolder ? `${normalizedFolder}/${folderName}` : folderName;
         if (!folderMap.has(folderPath)) {
           // Для виртуальных папок rawPath делаем из её логического пути (он будет правильно закодирован при отправке)
-          folderMap.set(folderPath, toFileItem(apiFile, folderPath, folderPath, folderName, true));
+          const virtualFolder = toFileItem(apiFile, folderPath, folderPath, folderName, true);
+          virtualFolder.size = formatBytes(folderSizes.get(folderPath) || 0);
+          folderMap.set(folderPath, virtualFolder);
           result.push(folderMap.get(folderPath)!);
         }
         continue;
@@ -180,6 +220,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
 
       const mappedItem = toFileItem(apiFile, itemPath, apiFile.path, itemName, isDir);
       if (isDir) {
+        mappedItem.size = formatBytes(folderSizes.get(itemPath) || 0);
         folderMap.set(itemPath, mappedItem);
       }
       result.push(mappedItem);
@@ -201,14 +242,20 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         buildFolderRouteMaps(res.files || []);
       }
 
+      const folderSizes = buildFolderSizes(res.files || []);
       const mapped = res.files
         ? (debouncedSearch.trim().length >= 2
           ? res.files.map((file) => {
             const normalizedPath = normalizePath(decodeURIComponent(file.path));
             const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-            return toFileItem(file, normalizedPath, file.path, fallbackName, file.is_dir || file.path.endsWith('/'));
+            const isDir = file.is_dir || file.path.endsWith('/');
+            const item = toFileItem(file, normalizedPath, file.path, fallbackName, isDir);
+            if (isDir) {
+              item.size = formatBytes(folderSizes.get(normalizedPath) || 0);
+            }
+            return item;
           })
-          : buildFolderView(res.files, currentFolder))
+          : buildFolderView(res.files, currentFolder, folderSizes))
         : [];
       setFiles(mapped);
     } catch (err) {
@@ -233,14 +280,20 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
           buildFolderRouteMaps(res.files || []);
         }
         if (cancelled) return;
+        const folderSizes = buildFolderSizes(res.files || []);
         const mapped = res.files
           ? (debouncedSearch.trim().length >= 2
             ? res.files.map((file) => {
               const normalizedPath = normalizePath(decodeURIComponent(file.path));
               const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
-              return toFileItem(file, normalizedPath, file.path, fallbackName, file.is_dir || file.path.endsWith('/'));
+              const isDir = file.is_dir || file.path.endsWith('/');
+              const item = toFileItem(file, normalizedPath, file.path, fallbackName, isDir);
+              if (isDir) {
+                item.size = formatBytes(folderSizes.get(normalizedPath) || 0);
+              }
+              return item;
             })
-            : buildFolderView(res.files, currentFolder))
+            : buildFolderView(res.files, currentFolder, folderSizes))
           : [];
         setFiles(mapped);
       } catch (err) {
@@ -810,8 +863,10 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                     className="inline-flex items-center whitespace-nowrap gap-2 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100 text-gray-700 leading-none"
                     title="Создать подпапку в текущей директории"
                   >
-                    Новая папка здесь
-                    <Plus size={16} />
+                    <div className='flex items-center gap-2'>
+                      Новая папка
+                      <Plus size={16} />
+                    </div>
                   </button>
                 ) : (
                   <form onSubmit={handleInlineCreateSubmit} className="flex items-center gap-2">
@@ -937,7 +992,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                     {item.type === 'folder' ? 'Папка' : item.category || item.fileType || '—'}
                   </div>
                   <div className="col-span-2 text-gray-500 text-sm">
-                    {item.type === 'file' ? item.size : '—'}
+                    {item.size || '0 B'}
                   </div>
                 </button>
               ))}
