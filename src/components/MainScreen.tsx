@@ -91,7 +91,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       .replace(/[^\p{L}\p{N}-]+/gu, '')
       .replace(/-+/g, '-')
       .replace(/^-+|-+$/g, '')
-      || 'folder';
+    || 'folder';
 
   const toSlugPath = (folderPath: string): string =>
     normalizePath(folderPath)
@@ -106,7 +106,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     const folderPaths = new Set<string>();
 
     for (const apiFile of apiFiles) {
-      const fullPath = normalizePath(apiFile.path);
+      const fullPath = normalizePath(decodeURIComponent(apiFile.path));
       if (!fullPath) continue;
       const parts = fullPath.split('/').filter(Boolean);
       const depth = apiFile.is_dir || apiFile.path.endsWith('/') ? parts.length : parts.length - 1;
@@ -148,7 +148,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
 
     // Из "плоского" списка путей строим витрину текущей папки.
     for (const apiFile of apiFiles) {
-      const fullPath = normalizePath(apiFile.path);
+      const fullPath = normalizePath(decodeURIComponent(apiFile.path));
       if (!fullPath) continue;
       if (normalizedFolder && !fullPath.startsWith(prefix)) continue;
 
@@ -197,7 +197,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       const mapped = res.files
         ? (debouncedSearch.trim().length >= 2
           ? res.files.map((file) => {
-            const normalizedPath = normalizePath(file.path);
+            const normalizedPath = normalizePath(decodeURIComponent(file.path));
             const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
             return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
           })
@@ -229,7 +229,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         const mapped = res.files
           ? (debouncedSearch.trim().length >= 2
             ? res.files.map((file) => {
-              const normalizedPath = normalizePath(file.path);
+              const normalizedPath = normalizePath(decodeURIComponent(file.path));
               const fallbackName = normalizedPath.split('/').pop() || normalizedPath;
               return toFileItem(file, normalizedPath, fallbackName, file.is_dir || file.path.endsWith('/'));
             })
@@ -249,7 +249,10 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   }, [auth.bucket, auth.token, currentFolder, debouncedSearch]);
 
   useEffect(() => {
-    const slugPath = normalizePath(location.pathname);
+    // Декодируем URL, чтобы "файлики" матчились с ключами в Map
+    const decodedPath = decodeURIComponent(location.pathname);
+    const slugPath = normalizePath(decodedPath);
+
     if (!slugPath) {
       if (currentFolder) {
         setCurrentFolder('');
@@ -266,18 +269,14 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     }
   }, [location.pathname, folderSlugToPath, currentFolder]);
 
-  useEffect(() => {
-    const targetPath = currentFolder ? `/${folderPathToSlug.get(currentFolder) || toSlugPath(currentFolder)}` : '/';
-    if (location.pathname !== targetPath) {
-      navigate(targetPath, { replace: true });
-    }
-  }, [currentFolder, folderPathToSlug, location.pathname, navigate]);
+  // Мы убрали useEffect, который делал navigate при смене currentFolder,
+  // чтобы избежать бесконечных циклов и конфликтов с URL.
 
   // SSE Подписка на события анализа
   useEffect(() => {
     const sse = createSSEConnection(auth.token, (event: AnalysisEvent) => {
       if (event.status === 'completed' || event.status === 'analysis_complete') {
-        const eventPath = normalizePath(event.path);
+        const eventPath = normalizePath(decodeURIComponent(event.path));
         setFiles(prev => prev.map(f => {
           if (f.id === eventPath) {
             return {
@@ -315,8 +314,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
 
   const handleFileClick = (file: FileItem) => {
     if (file.type === 'folder') {
-      setCurrentFolder(normalizePath(file.id));
-      setFilters(prev => ({ ...prev, globalSearch: '' }));
+      const slug = folderPathToSlug.get(normalizePath(file.id)) || toSlugPath(file.id);
+      navigate('/' + slug);
     } else {
       setSelectedFile(file);
     }
@@ -697,10 +696,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
       <Sidebar
         folders={sidebarFolders}
         onFolderClick={(id) => {
-          setCurrentFolder(id);
-          setFilters(prev => ({ ...prev, globalSearch: '' }));
-          setSelectedFolderIds(new Set());
-          setSelectedFileIds(new Set());
+          const slug = id ? (folderPathToSlug.get(id) || toSlugPath(id)) : '';
+          navigate(slug ? '/' + slug : '/');
         }}
         userName={auth.name}
         onCreateFolder={handleCreateFolder}
@@ -756,12 +753,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
             <div className="flex items-center justify-between text-sm text-gray-600 mb-4 gap-3">
               <div className="flex items-center min-w-0 flex-1 overflow-x-auto whitespace-nowrap pr-2">
                 <button
-                  onClick={() => {
-                    setCurrentFolder('');
-                    setFilters(prev => ({ ...prev, globalSearch: '' }));
-                    setSelectedFolderIds(new Set());
-                    setSelectedFileIds(new Set());
-                  }}
+                  onClick={() => navigate('/')}
                   className="hover:text-blue-600 transition-colors"
                 >
                   Главная
@@ -771,10 +763,8 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                     <ChevronRight size={16} className="mx-1 text-gray-400" />
                     <button
                       onClick={() => {
-                        setCurrentFolder(crumb.path);
-                        setFilters(prev => ({ ...prev, globalSearch: '' }));
-                        setSelectedFolderIds(new Set());
-                        setSelectedFileIds(new Set());
+                        const slug = folderPathToSlug.get(crumb.path) || toSlugPath(crumb.path);
+                        navigate('/' + slug);
                       }}
                       onDragOver={(e) => {
                         if (!draggedItem) return;

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
 export const AUTH_EXPIRED_EVENT = 'auth:expired';
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -20,6 +20,11 @@ export interface AuthState {
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
+/**
+ * Кодирует путь, сохраняя слэши. Используется для передачи путей в URL.
+ */
+const encodePath = (path: string) =>
+  path.split('/').map(segment => encodeURIComponent(segment)).join('/');
 
 interface ApiErrorResponse {
   error?: string;
@@ -223,7 +228,7 @@ export async function apiListFolder(
   folder: string,
 ): Promise<ListFilesResponse> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodeURIComponent(folder)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodePath(folder)}`,
     { headers: authHeaders(token) },
   );
   return handleResponse<ListFilesResponse>(res, { logoutOnUnauthorized: true });
@@ -235,7 +240,7 @@ export async function apiCreateFolder(
   folder: string,
 ): Promise<void> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodeURIComponent(folder)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodePath(folder)}`,
     {
       method: 'POST',
       headers: authHeaders(token),
@@ -250,7 +255,7 @@ export async function apiDeleteFolder(
   folder: string,
 ): Promise<void> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodeURIComponent(folder)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/folder/${encodePath(folder)}`,
     {
       method: 'DELETE',
       headers: authHeaders(token),
@@ -290,7 +295,7 @@ export async function apiDownloadFile(
   filePath: string,
 ): Promise<Blob> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/downloadFile/${encodeURIComponent(filePath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/downloadFile/${encodePath(filePath)}`,
     { headers: authHeaders(token) },
   );
   if (!res.ok) {
@@ -308,7 +313,7 @@ export async function apiDeleteFile(
   filePath: string,
 ): Promise<void> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/deleteFile/${encodeURIComponent(filePath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/deleteFile/${encodePath(filePath)}`,
     {
       method: 'DELETE',
       headers: authHeaders(token),
@@ -389,7 +394,7 @@ export async function apiTagObject(
   tags: string,
 ): Promise<void> {
   const url = new URL(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/tagObject/${encodeURIComponent(objectPath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/tagObject/${encodePath(objectPath)}`,
   );
   url.searchParams.set('tags', tags);
 
@@ -407,7 +412,7 @@ export async function apiUntagObject(
   tags: string,
 ): Promise<void> {
   const url = new URL(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/untagObject/${encodeURIComponent(objectPath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/untagObject/${encodePath(objectPath)}`,
   );
   url.searchParams.set('tags', tags);
 
@@ -429,7 +434,7 @@ export async function apiGetObjectTags(
   objectPath: string,
 ): Promise<ObjectTagsResponse> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/objectTags/${encodeURIComponent(objectPath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/objectTags/${encodePath(objectPath)}`,
     { headers: authHeaders(token) },
   );
   return handleResponse<ObjectTagsResponse>(res, { logoutOnUnauthorized: true });
@@ -443,7 +448,7 @@ export async function apiAnalyzeFile(
   filePath: string,
 ): Promise<void> {
   const res = await fetch(
-    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/analyze/${encodeURIComponent(filePath)}`,
+    `${API_BASE_URL}/bucket/${encodeURIComponent(bucket)}/analyze/${encodePath(filePath)}`,
     {
       method: 'POST',
       headers: authHeaders(token),
