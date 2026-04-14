@@ -9,6 +9,7 @@ export interface FileFilters {
   maxSize: string;
   dateFrom: string;
   dateTo: string;
+  tagsFilter: string;
 }
 
 interface FilterModalProps {
@@ -105,6 +106,20 @@ export function FilterModal({ filters, onFiltersChange, onReset, onClose }: Filt
               onChange={(e) => updateField('aiSummaryFilter', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="Фраза из AI-резюме"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="tagsFilter" className="block mb-2 text-gray-700">
+              Теги содержит
+            </label>
+            <input
+              id="tagsFilter"
+              type="text"
+              value={filters.tagsFilter}
+              onChange={(e) => updateField('tagsFilter', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="Введите теги через запятую"
             />
           </div>
 

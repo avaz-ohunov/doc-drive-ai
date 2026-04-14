@@ -46,6 +46,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     maxSize: '',
     dateFrom: '',
     dateTo: '',
+    tagsFilter: '',
   };
 
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -279,6 +280,14 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
           : buildFolderView(res.files, currentFolder, folderSizes))
         : [];
       setFiles(mapped);
+
+      // Update selectedFile if it exists to reflect changes (e.g. new tags)
+      if (selectedFile) {
+        const updated = mapped.find(f => f.id === selectedFile.id);
+        if (updated) {
+          setSelectedFile(updated);
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Не удалось загрузить файлы';
       setError(message);
@@ -318,6 +327,14 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
             : buildFolderView(res.files, currentFolder, folderSizes))
           : [];
         setFiles(mapped);
+
+        // Update selectedFile if it exists to reflect changes
+        if (selectedFile) {
+          const updated = mapped.find(f => f.id === selectedFile.id);
+          if (updated) {
+            setSelectedFile(updated);
+          }
+        }
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Не удалось загрузить файлы';
@@ -739,16 +756,26 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     if (toDate) {
       toDate.setHours(23, 59, 59, 999);
     }
+    const tagsFilterSegments = filters.tagsFilter.trim().toLowerCase().split(',').map(s => s.trim()).filter(s => s !== '');
 
     return files.filter((item) => {
       if (!matchesCategory(item, filters.category)) return false;
       if (globalSearch) {
         const matchesName = item.name.toLowerCase().includes(globalSearch);
         const matchesSummary = (item.summary || '').toLowerCase().includes(globalSearch);
-        if (!matchesName && !matchesSummary) return false;
+        const matchesTags = (item.tags || []).some(t => t.toLowerCase().includes(globalSearch));
+        if (!matchesName && !matchesSummary && !matchesTags) return false;
       }
       if (nameFilter && !item.name.toLowerCase().includes(nameFilter)) return false;
       if (aiSummaryFilter && !(item.summary || '').toLowerCase().includes(aiSummaryFilter)) return false;
+
+      if (tagsFilterSegments.length > 0) {
+        const itemTags = (item.tags || []).map(t => t.toLowerCase());
+        const matchesTags = tagsFilterSegments.some(segment =>
+          itemTags.some(tag => tag.includes(segment))
+        );
+        if (!matchesTags) return false;
+      }
 
       if (Number.isFinite(minSize) && filters.minSize.trim() !== '' && item.type === 'file') {
         if (parseHumanSizeToMb(item.size) < minSize) return false;

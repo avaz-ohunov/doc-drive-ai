@@ -21,6 +21,8 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
   const [isMoving, setIsMoving] = useState(false);
   const [newPath, setNewPath] = useState(file.id);
   const [newTag, setNewTag] = useState('');
+  const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
+  const [editingTagValue, setEditingTagValue] = useState('');
   const [isWorking, setIsWorking] = useState(false);
 
   // Определение иконки для отображения в модальном окне
@@ -122,15 +124,19 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
 
   const handleAddTag = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTag.trim()) return;
+    const tagToAdd = newTag.trim();
+    if (!tagToAdd) return;
 
     try {
       setIsWorking(true);
-      const currentTags = file.tags || [];
+      const currentTags = (file.tags || []).filter(t => t.trim() !== '');
       // Не отправляем запрос, если тег уже существует.
-      if (currentTags.includes(newTag.trim())) return;
+      if (currentTags.includes(tagToAdd)) {
+        setNewTag('');
+        return;
+      }
 
-      const updatedTagsStr = [...currentTags, newTag.trim()].join(',');
+      const updatedTagsStr = [...currentTags, tagToAdd].join(',');
       await apiTagObject(auth.bucket, auth.token, file.id, updatedTagsStr);
       setNewTag('');
       await onFileChanged();
@@ -144,11 +150,52 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
   const handleRemoveTag = async (tagToRemove: string) => {
     try {
       setIsWorking(true);
-      const updatedTagsStr = (file.tags || []).filter(t => t !== tagToRemove).join(',');
-      await apiTagObject(auth.bucket, auth.token, file.id, updatedTagsStr); // We just push new list
+      const updatedTagsStr = (file.tags || [])
+        .filter(t => t !== tagToRemove && t.trim() !== '')
+        .join(',');
+      await apiTagObject(auth.bucket, auth.token, file.id, updatedTagsStr);
       await onFileChanged();
     } catch (e: any) {
       alert(`Ошибка удаления тега: ${e.message}`);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  const handleEditTagStart = (index: number, value: string) => {
+    setEditingTagIndex(index);
+    setEditingTagValue(value);
+  };
+
+  const handleEditTagSubmit = async () => {
+    if (editingTagIndex === null) return;
+    const newValue = editingTagValue.trim();
+    const oldTags = [...(file.tags || [])];
+
+    if (!newValue) {
+      // If empty, treat as removal
+      await handleRemoveTag(oldTags[editingTagIndex]);
+      setEditingTagIndex(null);
+      return;
+    }
+
+    if (newValue === oldTags[editingTagIndex]) {
+      setEditingTagIndex(null);
+      return;
+    }
+
+    try {
+      setIsWorking(true);
+      oldTags[editingTagIndex] = newValue;
+      // Remove duplicates if any after rename
+      const uniqueTags = Array.from(new Set(oldTags.filter(t => t.trim() !== '')));
+      const updatedTagsStr = uniqueTags.join(',');
+
+      await apiTagObject(auth.bucket, auth.token, file.id, updatedTagsStr);
+      await onFileChanged();
+      setEditingTagIndex(null);
+    } catch (e: any) {
+      alert(`Ошибка изменения тега: ${e.message}`);
     } finally {
       setIsWorking(false);
     }
@@ -178,6 +225,10 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
                   onChange={e => setNewName(e.target.value)}
                   className="w-full px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
                   autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleRename();
+                    if (e.key === 'Escape') setIsRenaming(false);
+                  }}
                 />
                 <button onClick={handleRename} className="px-3 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">OK</button>
                 <button onClick={() => setIsRenaming(false)} className="px-3 border rounded text-sm hover:bg-gray-50">Отмена</button>
@@ -225,6 +276,10 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
                     onChange={e => setNewPath(e.target.value)}
                     className="flex-1 px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Новый путь (напр. docs/file.txt)"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleMove();
+                      if (e.key === 'Escape') setIsMoving(false);
+                    }}
                   />
                   <button onClick={handleMove} className="px-3 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">OK</button>
                   <button onClick={() => setIsMoving(false)} className="px-3 border rounded text-sm hover:bg-gray-50">Отмена</button>
@@ -267,18 +322,50 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
               )}
 
               <div className="space-y-3 border-t border-blue-100 pt-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-blue-900 mb-1">
-                  <Tag size={16} className="text-blue-600" />
-                  Теги
+                <div className="flex items-center justify-between gap-2 text-sm font-medium text-blue-900 mb-1">
+                  <div className="flex items-center gap-2">
+                    <Tag size={16} className="text-blue-600" />
+                    Теги
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-normal">кликните на тег для изменения</span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 bg-white/70 border border-blue-100 rounded-lg p-3 min-h-12">
-                  {file.tags && file.tags.map(tag => (
+                  {file.tags && file.tags.map((tag, idx) => (
                     tag && (
-                      <span key={tag} className="inline-flex items-center gap-1 bg-white border border-blue-200 text-blue-700 text-xs rounded-full shadow-sm pr-1 py-1">
-                        <span className="px-2 py-0.5 leading-none">{tag}</span>
-                        <button onClick={() => handleRemoveTag(tag)} className="p-1 rounded-full hover:bg-red-50 hover:text-red-500 opacity-80 hover:opacity-100 transition-all" disabled={isWorking}><X size={12} /></button>
-                      </span>
+                      <div key={`${tag}-${idx}`} className="inline-flex items-center gap-1 bg-white border border-blue-200 text-blue-700 text-xs rounded-full shadow-sm pr-1 py-1">
+                        {editingTagIndex === idx ? (
+                          <div className="flex items-center gap-1 px-2">
+                            <input
+                              type="text"
+                              value={editingTagValue}
+                              onChange={(e) => setEditingTagValue(e.target.value)}
+                              autoFocus
+                              className="w-20 outline-none border-b border-blue-300 bg-transparent"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleEditTagSubmit();
+                                if (e.key === 'Escape') setEditingTagIndex(null);
+                              }}
+                              onBlur={handleEditTagSubmit}
+                            />
+                          </div>
+                        ) : (
+                          <span
+                            className="px-2 py-0.5 leading-none cursor-pointer hover:text-blue-900 transition-colors"
+                            onClick={() => handleEditTagStart(idx, tag)}
+                            title="Нажмите, чтобы изменить"
+                          >
+                            {tag}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="p-1 rounded-full hover:bg-red-50 hover:text-red-500 opacity-80 hover:opacity-100 transition-all"
+                          disabled={isWorking}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
                     )
                   ))}
                   {(!file.tags || file.tags.length === 0 || (file.tags.length === 1 && !file.tags[0])) && <span className="text-xs text-gray-500 italic px-1 py-1">Нет тегов</span>}
