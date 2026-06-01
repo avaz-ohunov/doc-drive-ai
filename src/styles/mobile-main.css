@@ -91,6 +91,11 @@
     display: none !important;
   }
 
+  .mobile-top-bar,
+  .mobile-search-panel {
+    display: none !important;
+  }
+
   .file-list-meta {
     display: contents;
   }
@@ -172,10 +177,9 @@
   color: var(--color-blue-600, #2563eb);
 }
 
-/* Раскрывающийся поиск (анимация как у сайдбара) */
+/* Раскрывающийся поиск (анимация как у сайдбара); на desktop скрыт */
 .mobile-search-panel {
-  display: grid;
-  grid-template-rows: 0fr;
+  display: none;
   overflow: hidden;
   padding-inline: 0.875rem;
   background: #fff;
@@ -184,6 +188,13 @@
   transition:
     grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 680px) {
+  .mobile-search-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+  }
 }
 
 .mobile-search-panel--open {
