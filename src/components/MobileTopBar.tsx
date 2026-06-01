@@ -21,9 +21,11 @@ export function MobileTopBar({
   return (
     <>
       <header className="mobile-top-bar">
-        <Link to="/" className="mobile-top-bar__logo">
-          DocDriveAI
-        </Link>
+        <h2 className="text-xl font-bold text-gray-800 shrink-0 min-w-0">
+          <Link to="/" className="mobile-top-bar__logo">
+            DocDriveAI
+          </Link>
+        </h2>
         <div className="mobile-top-bar__actions">
           <button
             type="button"

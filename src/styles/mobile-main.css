@@ -110,8 +110,8 @@
   gap: 0.5rem;
   min-height: 3.25rem;
   padding: 0.625rem 0.875rem;
-  background: linear-gradient(180deg, #12151c 0%, #0d1016 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #fff;
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
   flex-shrink: 0;
   z-index: 40;
 }
@@ -122,16 +122,21 @@
   }
 }
 
-.mobile-top-bar__logo {
-  flex-shrink: 0;
-  font-size: 0.8125rem;
+/* Как в Sidebar: text-xl font-bold text-gray-800 */
+.mobile-top-bar h2 {
+  font-size: var(--text-xl, 1.25rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #f3f4f6;
+  line-height: 1.5;
+  color: #1f2937;
+}
+
+.mobile-top-bar__logo {
   text-decoration: none;
-  white-space: nowrap;
-  line-height: 1.2;
-  max-width: 7.5rem;
+  color: inherit;
+}
+
+.dark .mobile-top-bar h2 {
+  color: #eef2f9;
 }
 
 .mobile-top-bar__actions {
@@ -150,29 +155,29 @@
   border: none;
   border-radius: 0.625rem;
   background: transparent;
-  color: #e5e7eb;
+  color: var(--color-gray-600, #4b5563);
   transition: background-color 0.15s, color 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-top-bar__btn:hover,
 .mobile-top-bar__btn:focus-visible {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--color-gray-100, #f3f4f6);
+  color: var(--color-gray-800, #1f2937);
   outline: none;
 }
 
 .mobile-top-bar__btn--active {
-  background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
+  background: var(--color-blue-50, #eff6ff);
+  color: var(--color-blue-600, #2563eb);
 }
 
 /* Раскрывающийся поиск */
 .mobile-search-panel {
   display: none;
   padding: 0 0.875rem 0.75rem;
-  background: #0d1016;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #fff;
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
 }
 
 .mobile-search-panel--open {
@@ -189,14 +194,14 @@
   font-size: 1rem;
   line-height: 1.25;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #f9fafb;
+  border: 1px solid var(--color-gray-300, #d1d5db);
+  background: #fff;
+  color: var(--color-gray-900, #111827);
   outline: none;
 }
 
 .mobile-search-panel__input::placeholder {
-  color: #9ca3af;
+  color: var(--color-gray-400, #9ca3af);
   font-size: 0.875rem;
 }
 
@@ -299,7 +304,38 @@
 }
 
 .dark .mobile-top-bar {
-  background: linear-gradient(180deg, #0a0c10 0%, #06080b 100%);
+  background: linear-gradient(180deg, #12151c 0%, #0d1016 100%);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .mobile-top-bar__btn {
+  color: #e5e7eb;
+}
+
+.dark .mobile-top-bar__btn:hover,
+.dark .mobile-top-bar__btn:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.dark .mobile-top-bar__btn--active {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+.dark .mobile-search-panel {
+  background: #0d1016;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .mobile-search-panel__input {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f9fafb;
+}
+
+.dark .mobile-search-panel__input::placeholder {
+  color: #9ca3af;
 }
 
 /* ——— Drop zone mobile ——— */
