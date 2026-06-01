@@ -58,18 +58,21 @@ export function MobileTopBar({
       <div
         className={`mobile-search-panel${searchOpen ? ' mobile-search-panel--open' : ''}`}
         role="search"
-        hidden={!searchOpen}
+        aria-hidden={!searchOpen}
       >
-        <div className="mobile-search-panel__input-wrap">
-          <Search className="mobile-search-panel__icon" size={18} aria-hidden />
-          <input
-            type="search"
-            className="mobile-search-panel__input"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Поиск (от 2 символов)"
-            autoComplete="off"
-          />
+        <div className="mobile-search-panel__inner">
+          <div className="mobile-search-panel__input-wrap">
+            <Search className="mobile-search-panel__icon" size={18} aria-hidden />
+            <input
+              type="search"
+              className="mobile-search-panel__input"
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Поиск (от 2 символов)"
+              autoComplete="off"
+              tabIndex={searchOpen ? 0 : -1}
+            />
+          </div>
         </div>
       </div>
     </>
