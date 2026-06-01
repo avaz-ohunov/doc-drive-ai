@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 
 import { Sidebar, type SidebarFolder } from './Sidebar';
+import { MobileTopBar } from './MobileTopBar';
+import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { FileModal } from './FileModal';
 import { FilterModal, type FileFilters } from './FilterModal';
 import { DropZone } from './DropZone';
@@ -70,6 +72,17 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
   const [folderPathToSlug, setFolderPathToSlug] = useState<Map<string, string>>(new Map());
   const [folderSlugToPath, setFolderSlugToPath] = useState<Map<string, string>>(new Map());
   const [rootSidebarFolders, setRootSidebarFolders] = useState<SidebarFolder[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -805,39 +818,64 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
     });
   }, [currentFolder]);
 
+  const navigateToFolder = (id: string) => {
+    const slug = id ? (folderPathToSlug.get(id) || toSlugPath(id)) : '';
+    navigate(slug ? '/' + slug : '/');
+  };
+
+  const sidebarFolderProps = {
+    folders: rootSidebarFolders,
+    selectedRootFolderId: selectedSidebarRootId,
+    onFolderClick: navigateToFolder,
+    userName: auth.name,
+    onCreateFolder: handleCreateFolder,
+    onNavigateToProfile: () => {
+      setMobileMenuOpen(false);
+      onNavigateToProfile();
+    },
+    onFolderDragOver: (e: React.DragEvent<HTMLButtonElement>, folderId: string) => {
+      if (!draggedItem) return;
+      if (!canDropToFolder(draggedItem, folderId)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDropTargetFolder(folderId);
+    },
+    onFolderDragLeave: (folderId: string) => {
+      if (dropTargetFolder === folderId) {
+        setDropTargetFolder(null);
+      }
+    },
+    onFolderDrop: (e: React.DragEvent<HTMLButtonElement>, folderId: string) => {
+      e.preventDefault();
+      moveDraggedItemToFolder(folderId);
+    },
+    activeDropFolderId: dropTargetFolder,
+  };
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen main-screen-mobile-root">
       <Sidebar
-        folders={rootSidebarFolders}
-        selectedRootFolderId={selectedSidebarRootId}
-        onFolderClick={(id) => {
-          const slug = id ? (folderPathToSlug.get(id) || toSlugPath(id)) : '';
-          navigate(slug ? '/' + slug : '/');
-        }}
-        userName={auth.name}
-        onCreateFolder={handleCreateFolder}
-        onNavigateToProfile={onNavigateToProfile}
-        onFolderDragOver={(e, folderId) => {
-          if (!draggedItem) return;
-          if (!canDropToFolder(draggedItem, folderId)) return;
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          setDropTargetFolder(folderId);
-        }}
-        onFolderDragLeave={(folderId) => {
-          if (dropTargetFolder === folderId) {
-            setDropTargetFolder(null);
-          }
-        }}
-        onFolderDrop={(e, folderId) => {
-          e.preventDefault();
-          moveDraggedItemToFolder(folderId);
-        }}
-        activeDropFolderId={dropTargetFolder}
+        {...sidebarFolderProps}
+        className="main-screen-desktop-sidebar"
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white border-b border-gray-200 p-4">
+      <MobileSidebarDrawer
+        {...sidebarFolderProps}
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <MobileTopBar
+          searchValue={filters.globalSearch}
+          onSearchChange={(value) => setFilters((prev) => ({ ...prev, globalSearch: value }))}
+          searchOpen={mobileSearchOpen}
+          onSearchToggle={() => setMobileSearchOpen((open) => !open)}
+          onFilterClick={() => setShowFilterModal(true)}
+          onMenuClick={() => setMobileMenuOpen(true)}
+        />
+
+        <div className="main-screen-desktop-header bg-white border-b border-gray-200 p-4">
           <div className="flex items-center gap-3 max-w-4xl">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -862,10 +900,10 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
         <div
           ref={selectionAreaRef}
           onMouseDown={handleAreaMouseDown}
-          className="flex-1 overflow-auto p-6 bg-gray-50 relative select-none"
+          className="main-screen-content flex-1 overflow-auto p-6 bg-gray-50 relative select-none"
         >
           <div className="mb-4">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-4 gap-3">
+            <div className="main-screen-breadcrumbs-row flex items-center justify-between text-sm text-gray-600 mb-4 gap-3">
               <div className="flex items-center min-w-0 flex-1 overflow-x-auto whitespace-nowrap pr-2">
                 <button
                   onClick={() => navigate('/')}
@@ -911,7 +949,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                 {!isCreatingFolderInline ? (
                   <button
                     onClick={() => setIsCreatingFolderInline(true)}
-                    className="inline-flex items-center whitespace-nowrap gap-2 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100 text-gray-700 leading-none"
+                    className="main-screen-new-folder-btn inline-flex items-center whitespace-nowrap gap-2 px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100 text-gray-700 leading-none"
                     title="Создать подпапку в текущей директории"
                   >
                     <div className='flex items-center gap-2'>
@@ -945,7 +983,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
             </div>
             <DropZone onFileDrop={handleFileDrop} />
             {(selectedFolderIds.size > 0 || selectedFileIds.size > 0) && (
-              <div className="mb-3 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+              <div className="selection-banner-mobile mb-3 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
                 <span className="text-amber-900">
                   Выбрано: папок {selectedFolderIds.size}, файлов {selectedFileIds.size} (Ctrl/Cmd + клик)
                 </span>
@@ -986,7 +1024,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
             <div
               className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm relative"
             >
-              <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 font-medium text-gray-700">
+              <div className="file-list-desktop-header grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 font-medium text-gray-700">
                 <div className="col-span-5">Название</div>
                 <div className="col-span-3">Дата изменения</div>
                 <div className="col-span-2">Категория</div>
@@ -1021,7 +1059,7 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                     e.preventDefault();
                     handleDropOnFolder(item);
                   }}
-                  className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 transition-colors w-full text-left cursor-pointer items-center ${dropTargetFolder === item.id
+                  className={`file-list-row grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 transition-colors w-full text-left cursor-pointer items-center ${dropTargetFolder === item.id
                     ? 'bg-blue-100'
                     : selectedFolderIds.has(item.id)
                       ? 'bg-amber-100 border-2 border-amber-300 shadow-inner'
@@ -1038,12 +1076,16 @@ export function MainScreen({ auth, onNavigateToProfile, onLogout }: MainScreenPr
                     )}
                     <span className="truncate">{item.name}</span>
                   </div>
-                  <div className="col-span-3 text-gray-500 text-sm">{new Date(item.lastModified).toLocaleString()}</div>
-                  <div className="col-span-2 text-gray-500 text-sm truncate">
-                    {item.type === 'folder' ? 'Папка' : item.category || item.fileType || '—'}
-                  </div>
-                  <div className="col-span-2 text-gray-500 text-sm">
-                    {item.size || '0 B'}
+                  <div className="file-list-meta col-span-7">
+                    <span className="col-span-3 text-gray-500 text-sm">
+                      {new Date(item.lastModified).toLocaleString()}
+                    </span>
+                    <span className="col-span-2 text-gray-500 text-sm truncate">
+                      {item.type === 'folder' ? 'Папка' : item.category || item.fileType || '—'}
+                    </span>
+                    <span className="col-span-2 text-gray-500 text-sm">
+                      {item.size || '0 B'}
+                    </span>
                   </div>
                 </button>
               ))}

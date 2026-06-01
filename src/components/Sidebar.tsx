@@ -20,6 +20,9 @@ interface SidebarProps {
   onFolderDragLeave?: (folderId: string) => void;
   onFolderDrop?: (event: React.DragEvent<HTMLButtonElement>, folderId: string) => void;
   activeDropFolderId?: string | null;
+  /** Скрыть блок с логотипом (мобильный drawer). */
+  hideBranding?: boolean;
+  className?: string;
 }
 
 export function Sidebar({
@@ -33,6 +36,8 @@ export function Sidebar({
   onFolderDragLeave,
   onFolderDrop,
   activeDropFolderId,
+  hideBranding = false,
+  className = '',
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -52,12 +57,14 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex justify-center items-center">
-        <h2 className="text-xl font-bold text-gray-800">
-          <Link to="/">DocDriveAI</Link>
-        </h2>
-      </div>
+    <div className={`w-64 bg-white border-r border-gray-200 flex flex-col ${className}`.trim()}>
+      {!hideBranding && (
+        <div className="p-4 border-b border-gray-200 flex justify-center items-center">
+          <h2 className="text-xl font-bold text-gray-800">
+            <Link to="/">DocDriveAI</Link>
+          </h2>
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto p-3">
         <div className="mb-2 text-gray-500 px-3 py-2 flex justify-between items-center gap-2">
