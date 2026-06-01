@@ -30,24 +30,25 @@ export function FilterModal({ filters, onFiltersChange, onReset, onClose }: Filt
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="file-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50"
       onClick={onClose}
     >
-      <div
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2>Фильтры</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <X size={20} />
-          </button>
-        </div>
+      <div className="file-modal-overlay__center">
+        <div
+          className="file-modal-dialog bg-white rounded-lg shadow-xl max-w-lg w-full relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="file-modal-header flex items-center justify-between gap-3">
+            <h2>Фильтры</h2>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-        <div className="space-y-4">
+          <div className="file-modal-body space-y-4">
           <div>
             <label htmlFor="globalSearch" className="block mb-2 text-gray-700">
               Поиск (название + AI анализ)
@@ -162,21 +163,22 @@ export function FilterModal({ filters, onFiltersChange, onReset, onClose }: Filt
               />
             </div>
           </div>
-        </div>
+          </div>
 
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onReset}
-            className="flex-1 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-          >
-            Сбросить фильтры
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
-          >
-            Готово
-          </button>
+          <div className="file-modal-footer border-t border-gray-100 flex gap-3">
+            <button
+              onClick={onReset}
+              className="flex-1 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+            >
+              Сбросить фильтры
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
+            >
+              Готово
+            </button>
+          </div>
         </div>
       </div>
     </div>

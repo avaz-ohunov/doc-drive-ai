@@ -211,7 +211,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           className="file-modal-dialog bg-white rounded-lg shadow-xl max-w-2xl w-full relative"
           onClick={(e) => e.stopPropagation()}
         >
-        <div className="file-modal-header flex items-start justify-between p-4 pr-14 border-b border-gray-100 gap-3">
+        <div className="file-modal-header flex items-start justify-between pr-14 border-b border-gray-100 gap-3">
           <div className="flex items-start gap-3 w-full min-w-0">
             <div className="text-blue-600 bg-blue-50 p-2 rounded-xl shrink-0">
               <div className="scale-75 origin-top-left w-9 h-9">
@@ -251,7 +251,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           </button>
         </div>
 
-        <div className="file-modal-body p-6 w-full space-y-6 min-w-0">
+        <div className="file-modal-body w-full space-y-6 min-w-0">
           <div className="bg-gray-50 p-4 rounded-xl space-y-3 text-sm">
             <div className="grid grid-cols-[120px_1fr] gap-3 items-start">
               <span className="text-gray-500">Тип</span>
@@ -394,7 +394,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           )}
         </div>
 
-        <div className="file-modal-footer p-4 border-t border-gray-100 flex gap-3 bg-gray-50 rounded-b-lg">
+        <div className="file-modal-footer border-t border-gray-100 flex gap-3 bg-gray-50 rounded-b-lg">
           {file.type === 'file' && (
             <button
               onClick={handleDownload}

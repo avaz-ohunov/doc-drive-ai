@@ -201,9 +201,18 @@
   flex-shrink: 0;
 }
 
+.file-modal-dialog .file-modal-header {
+  padding: 1.5rem 1.5rem 1rem;
+}
+
 .file-modal-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 0 1.5rem 1rem;
+}
+
+.file-modal-dialog .file-modal-footer {
+  padding: 1rem 1.5rem 1.5rem;
 }
