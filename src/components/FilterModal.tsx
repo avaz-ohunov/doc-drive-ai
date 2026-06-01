@@ -170,7 +170,7 @@ export function FilterModal({ filters, onFiltersChange, onReset, onClose }: Filt
               onClick={onReset}
               className="flex-1 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
             >
-              Сбросить фильтры
+              Сбросить
             </button>
             <button
               onClick={onClose}
