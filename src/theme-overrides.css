@@ -175,3 +175,35 @@
 .dark textarea::placeholder {
   color: oklch(0.55 0.02 264);
 }
+
+/* Модалка файла: ограничение высоты и прокрутка (утилиты Tailwind в index.css неполные). */
+.file-modal-overlay {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.file-modal-overlay__center {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-modal-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 92dvh);
+  overflow: hidden;
+}
+
+.file-modal-header,
+.file-modal-footer {
+  flex-shrink: 0;
+}
+
+.file-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

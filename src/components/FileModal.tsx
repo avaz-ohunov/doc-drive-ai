@@ -203,14 +203,15 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity"
+      className="file-modal-overlay fixed inset-0 bg-black/60 z-50 transition-opacity"
       onClick={onClose}
     >
-      <div
-        className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[92vh] flex flex-col relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between p-4 pr-14 border-b border-gray-100 gap-3">
+      <div className="file-modal-overlay__center">
+        <div
+          className="file-modal-dialog bg-white rounded-lg shadow-xl max-w-2xl w-full relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+        <div className="file-modal-header flex items-start justify-between p-4 pr-14 border-b border-gray-100 gap-3">
           <div className="flex items-start gap-3 w-full min-w-0">
             <div className="text-blue-600 bg-blue-50 p-2 rounded-xl shrink-0">
               <div className="scale-75 origin-top-left w-9 h-9">
@@ -235,7 +236,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
               </div>
             ) : (
               <div className="flex items-start gap-2 max-w-full min-w-0">
-                <h2 className="text-xl font-bold text-gray-800 break-words leading-tight max-h-20 overflow-y-auto pr-1">{file.name}</h2>
+                <h2 className="text-xl font-bold text-gray-800 break-words leading-tight pr-1">{file.name}</h2>
                 <button onClick={() => setIsRenaming(true)} className="p-1 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 shrink-0 mt-0.5" title="Переименовать" disabled={isWorking}>
                   <Edit2 size={16} />
                 </button>
@@ -250,7 +251,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto w-full space-y-6 min-w-0">
+        <div className="file-modal-body p-6 w-full space-y-6 min-w-0">
           <div className="bg-gray-50 p-4 rounded-xl space-y-3 text-sm">
             <div className="grid grid-cols-[120px_1fr] gap-3 items-start">
               <span className="text-gray-500">Тип</span>
@@ -393,7 +394,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-100 flex gap-3 bg-gray-50 rounded-b-2xl">
+        <div className="file-modal-footer p-4 border-t border-gray-100 flex gap-3 bg-gray-50 rounded-b-lg">
           {file.type === 'file' && (
             <button
               onClick={handleDownload}
@@ -411,6 +412,7 @@ export function FileModal({ file, auth, isAnalyzing, onAnalyzeStart, onClose, on
           >
             <Trash2 size={18} /> Удалить
           </button>
+        </div>
         </div>
       </div>
     </div>
